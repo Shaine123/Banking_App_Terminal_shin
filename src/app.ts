@@ -2,7 +2,7 @@ import promtSync from "prompt-sync";
 
 const prompt = promtSync({ sigint: true });
 
-interface account {
+interface accountInterface {
   accountOwner: string;
   Fname: string;
   Lname: string;
@@ -17,7 +17,7 @@ abstract class Account {
   public id: number;
   public balance: number;
 
-  private accountList: account[] = [];
+  protected static accountList: accountInterface[] = [];
 
   constructor(
     id: number,
@@ -32,17 +32,51 @@ abstract class Account {
     this.id = id;
     this.balance = balance;
 
-    this.accountList.push({
-      accountOwner: accountOwner,
-      Fname: Fname,
-      Lname: Lname,
-      id: id,
-      balance: balance,
+    if (accountOwner !== "admin") {
+      this.createAccount({
+        accountOwner: accountOwner,
+        Fname: Fname,
+        Lname: Lname,
+        id: id,
+        balance: balance,
+      });
+    }
+  }
+
+  private createAccount(account: accountInterface): void {
+    const checkAvailability = Account.accountList.find(
+      (item) => item.id == account.id,
+    );
+
+    if (checkAvailability !== undefined) {
+      console.log("Account Number already exist !!");
+      console.log("Please use a different Account Number\n");
+
+      return;
+    }
+
+    if (account.balance < 500) {
+      console.log("Insufficient Balance!");
+      console.log(
+        "Please put in a balance more than or equal to $500. Thank you \n",
+      );
+
+      return;
+    }
+
+    Account.accountList.push({
+      accountOwner: account.accountOwner,
+      Fname: account.Fname,
+      Lname: account.Lname,
+      id: account.id,
+      balance: account.balance,
     });
+
+    console.log("== Account Created Successfully == \n");
   }
 
   viewAccounts(): void {
-    console.log(this.accountList);
+    console.log(Account.accountList);
   }
 
   abstract checkBalance(): void;
@@ -88,7 +122,7 @@ do {
     let accountType = parseInt(prompt(""));
 
     if (accountType == 1) {
-      const savingsAccount = new SavingsAccount(
+      new SavingsAccount(
         accountNum,
         accountOwner,
         firstName,
@@ -96,7 +130,7 @@ do {
         initialBalance,
       );
     } else if (accountType == 2) {
-      const savingsAccount = new CheckingAccount(
+      new CheckingAccount(
         accountNum,
         accountOwner,
         firstName,
@@ -104,6 +138,9 @@ do {
         initialBalance,
       );
     }
+  } else if (parseInt(choice) == 2) {
+    const savingsAccount = new SavingsAccount(0, "admin", "john", "doe", 10);
+    savingsAccount.viewAccounts();
   } else if (parseInt(choice) == 6) {
     console.log("Thank you for using my Bank!");
   }
