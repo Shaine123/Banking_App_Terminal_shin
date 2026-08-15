@@ -103,7 +103,7 @@ class Account {
             console.log("Transferred to account does not exist!");
             return;
         }
-        if (this.balance < 100) {
+        if (amount < 100) {
             console.log("Insufficient Amount!");
             return;
         }
@@ -119,17 +119,38 @@ class Account {
         }
         Account.accountList.forEach((acc) => {
             if (acc.id == acc1) {
-                return { ...withrawingAccount };
+                acc = withrawingAccount;
             }
             else if (acc.id == acc2) {
-                return {
-                    ...acc,
-                    balance: acc.balance + amount,
-                };
+                acc.balance = acc.balance + amount;
             }
-            return acc;
         });
+        //   Account.accountList.forEach((acc) => {
+        //   if (acc.id == acc1) {
+        //     acc = withrawingAccount
+        //   } else if (acc.id == acc2) {
+        //     return {
+        //       ...acc,
+        //       balance: acc.balance + amount,
+        //     };
+        //   }
+        //   return acc;
+        // });
         console.log("Transfer Successful!");
+    }
+    viewBalance(id) {
+        let isAccountExist = this.findAccount(id);
+        if (!isAccountExist) {
+            console.log("Account Not Found!");
+            return;
+        }
+        const currentAccount = Account.accountList.find((acc) => acc.id == id);
+        if (currentAccount != undefined) {
+            console.log("Owner:");
+            console.log(`${currentAccount.accountOwner}\n`);
+            console.log("Balance:");
+            console.log(`$${currentAccount.balance}\n`);
+        }
     }
     findAccount(id) {
         const checkAvailability = Account.accountList.find((item) => item.id == id);
@@ -227,6 +248,11 @@ do {
         let amount = parseInt(prompt("Amount: "));
         const adminAccount = new SavingsAccount(1, "admin", "admin", "doe", 0, "Savings");
         adminAccount.transferAmount(transferFrom, transferTo, amount);
+    }
+    else if (parseInt(choice) == 5) {
+        let accountNumber = parseInt(prompt("Account Number: "));
+        let admin = new SavingsAccount(0, "admin", "admin", "admin", 0, "Savings");
+        admin.viewBalance(accountNumber);
     }
     else if (parseInt(choice) == 7) {
         console.log("Thank you for using my Bank!");

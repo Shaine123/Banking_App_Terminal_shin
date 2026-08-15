@@ -182,17 +182,45 @@ abstract class Account {
 
     Account.accountList.forEach((acc) => {
       if (acc.id == acc1) {
-        return { ...withrawingAccount };
+        acc = withrawingAccount;
       } else if (acc.id == acc2) {
-        return {
-          ...acc,
-          balance: acc.balance + amount,
-        };
+        acc.balance = acc.balance + amount;
       }
-      return acc;
     });
 
+    //   Account.accountList.forEach((acc) => {
+    //   if (acc.id == acc1) {
+    //     acc = withrawingAccount
+    //   } else if (acc.id == acc2) {
+    //     return {
+    //       ...acc,
+    //       balance: acc.balance + amount,
+    //     };
+    //   }
+    //   return acc;
+    // });
+
     console.log("Transfer Successful!");
+  }
+
+  viewBalance(id: number) {
+    let isAccountExist = this.findAccount(id);
+
+    if (!isAccountExist) {
+      console.log("Account Not Found!");
+      return;
+    }
+
+    const currentAccount: accountInterface | undefined =
+      Account.accountList.find((acc) => acc.id == id);
+
+    if (currentAccount != undefined) {
+      console.log("Owner:");
+      console.log(`${currentAccount.accountOwner}\n`);
+
+      console.log("Balance:");
+      console.log(`$${currentAccount.balance}\n`);
+    }
   }
 
   findAccount(id: number): boolean {
@@ -355,6 +383,12 @@ do {
     );
 
     adminAccount.transferAmount(transferFrom, transferTo, amount);
+  } else if (parseInt(choice) == 5) {
+    let accountNumber = parseInt(prompt("Account Number: "));
+
+    let admin = new SavingsAccount(0, "admin", "admin", "admin", 0, "Savings");
+
+    admin.viewBalance(accountNumber);
   } else if (parseInt(choice) == 7) {
     console.log("Thank you for using my Bank!");
   }
