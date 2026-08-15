@@ -3,6 +3,7 @@ import promtSync from "prompt-sync";
 const prompt = promtSync({ sigint: true });
 
 type AccountType = "Savings" | "Checking";
+type TransactionType = "Deposit" | "Withraw" | "Transfer";
 
 interface accountInterface {
   accountOwner: string;
@@ -13,7 +14,52 @@ interface accountInterface {
   type: AccountType;
 }
 
-abstract class Account {
+interface transactionInterface {
+  transactionType: TransactionType;
+  amount: number;
+  accountId: number;
+  date?: string;
+}
+
+class Transactions {
+  protected static transactions: transactionInterface[] = [];
+
+  createTransaction(transaction: transactionInterface) {
+    let currDate = new Date();
+    Transactions.transactions.push({
+      ...transaction,
+      date: this.formatDate(currDate),
+    });
+  }
+
+  viewTransactions() {
+    if (Transactions.transactions.length <= 0) {
+      console.log("No Transactions");
+      return;
+    }
+
+    console.log("Transaction History");
+
+    Transactions.transactions.forEach((trans, index) => {
+      console.log(`${index + 1}.`);
+      console.log(`${trans.transactionType}`);
+      console.log(`$${trans.amount}`);
+      console.log(`${trans.date}\n`);
+    });
+  }
+
+  formatDate(date: Date) {
+    let formatedDate = new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(date);
+
+    return formatedDate;
+  }
+}
+
+abstract class Account extends Transactions {
   public accountOwner: string;
   public Fname: string;
   public Lname: string;
@@ -31,6 +77,8 @@ abstract class Account {
     balance: number,
     type: AccountType,
   ) {
+    super();
+
     this.accountOwner = accountOwner;
     this.Fname = Fname;
     this.Lname = Lname;
@@ -113,6 +161,12 @@ abstract class Account {
       }
     });
 
+    this.createTransaction({
+      transactionType: "Deposit",
+      amount: balance,
+      accountId: id,
+    });
+
     console.log("Deposit Successfull !!\n");
   }
 
@@ -142,6 +196,12 @@ abstract class Account {
       if (account.id == id) {
         account.balance = account.balance - balance;
       }
+    });
+
+    this.createTransaction({
+      transactionType: "Withraw",
+      amount: balance,
+      accountId: id,
     });
 
     console.log("Withraw Successful! \n");
@@ -181,24 +241,18 @@ abstract class Account {
     }
 
     Account.accountList.forEach((acc) => {
-      if (acc.id == acc1) {
+      if (acc.id === acc1) {
         acc = withrawingAccount;
-      } else if (acc.id == acc2) {
+      } else if (acc.id === acc2) {
         acc.balance = acc.balance + amount;
       }
     });
 
-    //   Account.accountList.forEach((acc) => {
-    //   if (acc.id == acc1) {
-    //     acc = withrawingAccount
-    //   } else if (acc.id == acc2) {
-    //     return {
-    //       ...acc,
-    //       balance: acc.balance + amount,
-    //     };
-    //   }
-    //   return acc;
-    // });
+    this.createTransaction({
+      transactionType: "Transfer",
+      amount: amount,
+      accountId: acc1,
+    });
 
     console.log("Transfer Successful!");
   }
@@ -389,6 +443,10 @@ do {
     let admin = new SavingsAccount(0, "admin", "admin", "admin", 0, "Savings");
 
     admin.viewBalance(accountNumber);
+  } else if (parseInt(choice) == 6) {
+    let admin = new SavingsAccount(0, "admin", "admin", "admin", 0, "Savings");
+
+    admin.viewTransactions();
   } else if (parseInt(choice) == 7) {
     console.log("Thank you for using my Bank!");
   }

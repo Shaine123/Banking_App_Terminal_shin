@@ -1,6 +1,37 @@
 import promtSync from "prompt-sync";
 const prompt = promtSync({ sigint: true });
-class Account {
+class Transactions {
+    static transactions = [];
+    createTransaction(transaction) {
+        let currDate = new Date();
+        Transactions.transactions.push({
+            ...transaction,
+            date: this.formatDate(currDate),
+        });
+    }
+    viewTransactions() {
+        if (Transactions.transactions.length <= 0) {
+            console.log("No Transactions");
+            return;
+        }
+        console.log("Transaction History");
+        Transactions.transactions.forEach((trans, index) => {
+            console.log(`${index + 1}.`);
+            console.log(`${trans.transactionType}`);
+            console.log(`${trans.amount}`);
+            console.log(`${trans.date}\n`);
+        });
+    }
+    formatDate(date) {
+        let formatedDate = new Intl.DateTimeFormat("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        }).format(date);
+        return formatedDate;
+    }
+}
+class Account extends Transactions {
     accountOwner;
     Fname;
     Lname;
@@ -9,6 +40,7 @@ class Account {
     type;
     static accountList = [];
     constructor(id, accountOwner, Fname, Lname, balance, type) {
+        super();
         this.accountOwner = accountOwner;
         this.Fname = Fname;
         this.Lname = Lname;
@@ -68,6 +100,11 @@ class Account {
                 account.balance = account.balance + balance;
             }
         });
+        this.createTransaction({
+            transactionType: "Deposit",
+            amount: balance,
+            accountId: id,
+        });
         console.log("Deposit Successfull !!\n");
     }
     withrawAmount(id, type, balance) {
@@ -89,6 +126,11 @@ class Account {
             if (account.id == id) {
                 account.balance = account.balance - balance;
             }
+        });
+        this.createTransaction({
+            transactionType: "Withraw",
+            amount: balance,
+            accountId: id,
         });
         console.log("Withraw Successful! \n");
     }
@@ -118,24 +160,18 @@ class Account {
             return;
         }
         Account.accountList.forEach((acc) => {
-            if (acc.id == acc1) {
+            if (acc.id === acc1) {
                 acc = withrawingAccount;
             }
-            else if (acc.id == acc2) {
+            else if (acc.id === acc2) {
                 acc.balance = acc.balance + amount;
             }
         });
-        //   Account.accountList.forEach((acc) => {
-        //   if (acc.id == acc1) {
-        //     acc = withrawingAccount
-        //   } else if (acc.id == acc2) {
-        //     return {
-        //       ...acc,
-        //       balance: acc.balance + amount,
-        //     };
-        //   }
-        //   return acc;
-        // });
+        this.createTransaction({
+            transactionType: "Transfer",
+            amount: amount,
+            accountId: acc1,
+        });
         console.log("Transfer Successful!");
     }
     viewBalance(id) {
@@ -253,6 +289,10 @@ do {
         let accountNumber = parseInt(prompt("Account Number: "));
         let admin = new SavingsAccount(0, "admin", "admin", "admin", 0, "Savings");
         admin.viewBalance(accountNumber);
+    }
+    else if (parseInt(choice) == 6) {
+        let admin = new SavingsAccount(0, "admin", "admin", "admin", 0, "Savings");
+        admin.viewTransactions();
     }
     else if (parseInt(choice) == 7) {
         console.log("Thank you for using my Bank!");
