@@ -6,13 +6,15 @@ class Account {
     Lname;
     id;
     balance;
+    type;
     static accountList = [];
-    constructor(id, accountOwner, Fname, Lname, balance) {
+    constructor(id, accountOwner, Fname, Lname, balance, type) {
         this.accountOwner = accountOwner;
         this.Fname = Fname;
         this.Lname = Lname;
         this.id = id;
         this.balance = balance;
+        this.type = type;
         if (accountOwner !== "admin") {
             this.createAccount({
                 accountOwner: accountOwner,
@@ -20,6 +22,7 @@ class Account {
                 Lname: Lname,
                 id: id,
                 balance: balance,
+                type: type,
             });
         }
     }
@@ -27,12 +30,12 @@ class Account {
         const checkAvailability = Account.accountList.find((item) => item.id == account.id);
         if (checkAvailability !== undefined) {
             console.log("Account Number already exist !!");
-            console.log("Please use a different Account Number");
+            console.log("Please use a different Account Number\n");
             return;
         }
         if (account.balance < 500) {
             console.log("Insufficient Balance!");
-            console.log("Please put in a balance more than or equal to $500. Thank you");
+            console.log("Please put in a balance more than or equal to $500. Thank you \n");
             return;
         }
         Account.accountList.push({
@@ -41,11 +44,101 @@ class Account {
             Lname: account.Lname,
             id: account.id,
             balance: account.balance,
+            type: account.type,
         });
-        console.log("== Account Created Successfully == ");
+        console.log("== Account Created Successfully == \n");
     }
     viewAccounts() {
-        console.log(Account.accountList);
+        let updatedAccounts = Account.accountList.forEach((item) => { });
+    }
+    deposit(id, type, balance) {
+        if (!this.findAccount(id)) {
+            console.log("Account Number Does Not Exist !!");
+            return;
+        }
+        if (balance < 100) {
+            console.log("Insufficient Balance!");
+            console.log("Please put in a balance more than or equal to $500. Thank you \n");
+        }
+        // if (type == "Savings") {
+        // } else if (type == "Checking") {
+        // }
+        Account.accountList.forEach((account) => {
+            if (account.id == id) {
+                account.balance = account.balance + balance;
+            }
+        });
+        console.log("Deposit Successfull !!\n");
+    }
+    withrawAmount(id, type, balance) {
+        if (!this.findAccount(id)) {
+            console.log("Account Number Does Not Exist !!");
+            return;
+        }
+        let ownerAccount = Account.accountList.find((item) => {
+            if (item.id == id) {
+                return item;
+            }
+        });
+        if (ownerAccount?.balance !== undefined &&
+            ownerAccount?.balance < balance) {
+            console.log("Insufficient Balance \n");
+            return;
+        }
+        Account.accountList.forEach((account) => {
+            if (account.id == id) {
+                account.balance = account.balance - balance;
+            }
+        });
+        console.log("Withraw Successful! \n");
+    }
+    transferAmount(acc1, acc2, amount) {
+        let checkAccount1 = this.findAccount(acc1);
+        if (!checkAccount1) {
+            console.log("Transfer from account does not exist!");
+            return;
+        }
+        let checkAccount2 = this.findAccount(acc2);
+        if (!checkAccount2) {
+            console.log("Transferred to account does not exist!");
+            return;
+        }
+        if (this.balance < 100) {
+            console.log("Insufficient Amount!");
+            return;
+        }
+        // Reduce the balance from the first account
+        let withrawingAccount = Account.accountList.find((acc) => acc.id == acc1);
+        if (withrawingAccount?.balance != undefined &&
+            withrawingAccount.balance > amount) {
+            withrawingAccount.balance = withrawingAccount.balance - amount;
+        }
+        else {
+            console.log("Insufficient Account Balance!");
+            return;
+        }
+        Account.accountList.forEach((acc) => {
+            if (acc.id == acc1) {
+                return { ...withrawingAccount };
+            }
+            else if (acc.id == acc2) {
+                return {
+                    ...acc,
+                    balance: acc.balance + amount,
+                };
+            }
+            return acc;
+        });
+        console.log("Transfer Successful!");
+    }
+    findAccount(id) {
+        const checkAvailability = Account.accountList.find((item) => item.id == id);
+        if (checkAvailability !== undefined) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 }
 class SavingsAccount extends Account {
@@ -65,8 +158,9 @@ do {
     console.log("2. Deposit");
     console.log("3. Withdraw");
     console.log("4. Transfer");
-    console.log("5. History");
-    console.log("6. Exit");
+    console.log("5. View Balance");
+    console.log("6. History");
+    console.log("7. Exit");
     choice = prompt("Input choice: ");
     if (parseInt(choice) == 1) {
         console.log("== Create Account == \n");
@@ -80,18 +174,62 @@ do {
         console.log("2. Checking account");
         let accountType = parseInt(prompt(""));
         if (accountType == 1) {
-            new SavingsAccount(accountNum, accountOwner, firstName, lastName, initialBalance);
+            new SavingsAccount(accountNum, accountOwner, firstName, lastName, initialBalance, "Savings");
         }
         else if (accountType == 2) {
-            new CheckingAccount(accountNum, accountOwner, firstName, lastName, initialBalance);
+            new CheckingAccount(accountNum, accountOwner, firstName, lastName, initialBalance, "Checking");
         }
     }
     else if (parseInt(choice) == 2) {
-        const savingsAccount = new SavingsAccount(0, "admin", "john", "doe", 10);
-        savingsAccount.viewAccounts();
+        let accountNumber = parseInt(prompt("Please enter Account Number: "));
+        let depositAmount = parseInt(prompt("Please enter Amount to Deposit: "));
+        console.log("== Choose Account Type ==");
+        console.log("1. SavingsAccount");
+        console.log("2. Checking account");
+        let accountType = parseInt(prompt("Enter: "));
+        if (accountType < 0) {
+            console.log("Invalid Account type please input 1 or 2. Thank you");
+            accountType = parseInt(prompt(""));
+        }
+        if (accountType == 1) {
+            const adminAccount = new SavingsAccount(accountNumber, "admin", "admin", "doe", depositAmount, "Savings");
+            adminAccount.deposit(accountNumber, "Savings", depositAmount);
+        }
+        else if (accountType == 2) {
+            const adminAccount = new CheckingAccount(accountNumber, "admin", "admin", "doe", depositAmount, "Checking");
+            adminAccount.deposit(accountNumber, "Checking", depositAmount);
+        }
     }
-    else if (parseInt(choice) == 6) {
+    else if (parseInt(choice) == 3) {
+        let accountNumber = parseInt(prompt("Please enter Account Number: "));
+        let depositAmount = parseInt(prompt("Please enter Amount to Withdraw: "));
+        console.log("== Choose Account Type ==");
+        console.log("1. SavingsAccount");
+        console.log("2. Checking account");
+        let accountType = parseInt(prompt("Enter: "));
+        if (accountType < 0) {
+            console.log("Invalid Account type please input 1 or 2. Thank you");
+            accountType = parseInt(prompt(""));
+        }
+        if (accountType == 1) {
+            const adminAccount = new SavingsAccount(accountNumber, "admin", "admin", "doe", depositAmount, "Savings");
+            adminAccount.withrawAmount(accountNumber, "Savings", depositAmount);
+        }
+        else if (accountType == 2) {
+            const adminAccount = new CheckingAccount(accountNumber, "admin", "admin", "doe", depositAmount, "Checking");
+            adminAccount.withrawAmount(accountNumber, "Savings", depositAmount);
+        }
+    }
+    else if (parseInt(choice) == 4) {
+        console.log("Transfer to another account\n");
+        let transferFrom = parseInt(prompt("From Account: "));
+        let transferTo = parseInt(prompt("To Account: "));
+        let amount = parseInt(prompt("Amount: "));
+        const adminAccount = new SavingsAccount(1, "admin", "admin", "doe", 0, "Savings");
+        adminAccount.transferAmount(transferFrom, transferTo, amount);
+    }
+    else if (parseInt(choice) == 7) {
         console.log("Thank you for using my Bank!");
     }
-} while (parseInt(choice) != 6);
+} while (parseInt(choice) != 7);
 //# sourceMappingURL=app.js.map
