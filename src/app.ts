@@ -94,7 +94,19 @@ class Bank {
   //create an account
 
   createAccount(account: AccountInterface): void {
-    const checkAvailability = Bank.accountList.find(
+    let filteredAccounts: AccountInterface[] | [] = [];
+
+    if (account.type == "Savings") {
+      filteredAccounts = Bank.accountList.filter((acc) => {
+        return acc.type == "Savings";
+      });
+    } else if (account.type == "Checking") {
+      filteredAccounts = Bank.accountList.filter((acc) => {
+        return acc.type == "Checking";
+      });
+    }
+
+    const checkAvailability = filteredAccounts.find(
       (item) => item.id == account.id,
     );
 
@@ -142,16 +154,19 @@ class Bank {
       return;
     }
 
-    // if (type == "Savings") {
-
-    // } else if (type == "Checking") {
-    // }
-
-    Bank.accountList.forEach((account) => {
-      if (account.id == id) {
-        account.balance = account.balance + balance;
-      }
-    });
+    if (type == "Savings") {
+      Bank.accountList.forEach((account) => {
+        if (account.id == id && account.type == "Savings") {
+          account.balance = account.balance + balance;
+        }
+      });
+    } else if (type == "Checking") {
+      Bank.accountList.forEach((account) => {
+        if (account.id == id && account.type == "Checking") {
+          account.balance = account.balance + balance;
+        }
+      });
+    }
 
     this.transactions.createTransaction({
       transactionType: "Deposit",
@@ -251,7 +266,7 @@ class Bank {
   }
 
   //View Balance on Account
-  viewBalance(id: number) {
+  viewBalance(id: number, type: AccountType) {
     let isAccountExist = this.findAccount(id);
 
     if (!isAccountExist) {
@@ -259,7 +274,9 @@ class Bank {
       return;
     }
 
-    const currentAccount: AccountInterface | undefined = Bank.accountList.find(
+    const filterAccounts = Bank.accountList.filter((acc) => acc.type == type);
+
+    const currentAccount: AccountInterface | undefined = filterAccounts.find(
       (acc) => acc.id == id,
     );
 
@@ -269,6 +286,8 @@ class Bank {
 
       console.log("Balance:");
       console.log(`$${currentAccount.balance}\n`);
+
+      console.log(`Account Type: ${currentAccount.type}`);
     }
   }
 
@@ -358,7 +377,7 @@ do {
     console.log("2. Checking account");
     let accountType = parseInt(prompt("Enter: "));
 
-    if (accountType < 0) {
+    if (accountType !== 1 && accountType !== 2) {
       console.log("Invalid Account type please input 1 or 2. Thank you");
       accountType = parseInt(prompt(""));
     }
@@ -403,9 +422,23 @@ do {
   } else if (parseInt(choice) == 5) {
     let accountNumber = parseInt(prompt("Account Number: "));
 
+    console.log("== Choose Account Type ==");
+    console.log("1. SavingsAccount");
+    console.log("2. Checking account");
+    let accountType = parseInt(prompt("Enter: "));
+
+    if (accountType !== 1 && accountType !== 2) {
+      console.log("Invalid Account type please input 1 or 2. Thank you");
+      accountType = parseInt(prompt(""));
+    }
+
     let bank = new Bank();
 
-    bank.viewBalance(accountNumber);
+    if (accountType == 1) {
+      bank.viewBalance(accountNumber, "Savings");
+    } else {
+      bank.viewBalance(accountNumber, "Checking");
+    }
   } else if (parseInt(choice) == 6) {
     let transaction = new Transactions();
 

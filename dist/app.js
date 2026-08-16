@@ -53,7 +53,18 @@ class Bank {
     transactions = new Transactions();
     //create an account
     createAccount(account) {
-        const checkAvailability = Bank.accountList.find((item) => item.id == account.id);
+        let filteredAccounts = [];
+        if (account.type == "Savings") {
+            filteredAccounts = Bank.accountList.filter((acc) => {
+                return acc.type == "Savings";
+            });
+        }
+        else if (account.type == "Checking") {
+            filteredAccounts = Bank.accountList.filter((acc) => {
+                return acc.type == "Checking";
+            });
+        }
+        const checkAvailability = filteredAccounts.find((item) => item.id == account.id);
         if (checkAvailability !== undefined) {
             console.log("Account Number already exist !!");
             console.log("Please use a different Account Number\n");
@@ -85,14 +96,20 @@ class Bank {
             console.log("Please put in a balance more than or equal to $500. Thank you \n");
             return;
         }
-        // if (type == "Savings") {
-        // } else if (type == "Checking") {
-        // }
-        Bank.accountList.forEach((account) => {
-            if (account.id == id) {
-                account.balance = account.balance + balance;
-            }
-        });
+        if (type == "Savings") {
+            Bank.accountList.forEach((account) => {
+                if (account.id == id && account.type == "Savings") {
+                    account.balance = account.balance + balance;
+                }
+            });
+        }
+        else if (type == "Checking") {
+            Bank.accountList.forEach((account) => {
+                if (account.id == id && account.type == "Checking") {
+                    account.balance = account.balance + balance;
+                }
+            });
+        }
         this.transactions.createTransaction({
             transactionType: "Deposit",
             amount: balance,
@@ -167,18 +184,20 @@ class Bank {
         console.log("Transfer Successful!");
     }
     //View Balance on Account
-    viewBalance(id) {
+    viewBalance(id, type) {
         let isAccountExist = this.findAccount(id);
         if (!isAccountExist) {
             console.log("Account Not Found!");
             return;
         }
-        const currentAccount = Bank.accountList.find((acc) => acc.id == id);
+        const filterAccounts = Bank.accountList.filter((acc) => acc.type == type);
+        const currentAccount = filterAccounts.find((acc) => acc.id == id);
         if (currentAccount != undefined) {
             console.log("Owner:");
             console.log(`${currentAccount.accountOwner}\n`);
             console.log("Balance:");
             console.log(`$${currentAccount.balance}\n`);
+            console.log(`Account Type: ${currentAccount.type}`);
         }
     }
     //Finding Account
@@ -241,7 +260,7 @@ do {
         console.log("1. SavingsAccount");
         console.log("2. Checking account");
         let accountType = parseInt(prompt("Enter: "));
-        if (accountType < 0) {
+        if (accountType !== 1 && accountType !== 2) {
             console.log("Invalid Account type please input 1 or 2. Thank you");
             accountType = parseInt(prompt(""));
         }
@@ -282,8 +301,21 @@ do {
     }
     else if (parseInt(choice) == 5) {
         let accountNumber = parseInt(prompt("Account Number: "));
+        console.log("== Choose Account Type ==");
+        console.log("1. SavingsAccount");
+        console.log("2. Checking account");
+        let accountType = parseInt(prompt("Enter: "));
+        if (accountType !== 1 && accountType !== 2) {
+            console.log("Invalid Account type please input 1 or 2. Thank you");
+            accountType = parseInt(prompt(""));
+        }
         let bank = new Bank();
-        bank.viewBalance(accountNumber);
+        if (accountType == 1) {
+            bank.viewBalance(accountNumber, "Savings");
+        }
+        else {
+            bank.viewBalance(accountNumber, "Checking");
+        }
     }
     else if (parseInt(choice) == 6) {
         let transaction = new Transactions();
