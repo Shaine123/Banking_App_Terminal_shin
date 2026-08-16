@@ -5,7 +5,7 @@ const prompt = promtSync({ sigint: true });
 type AccountType = "Savings" | "Checking";
 type TransactionType = "Deposit" | "Withraw" | "Transfer";
 
-interface accountInterface {
+interface AccountInterface {
   accountOwner: string;
   Fname: string;
   Lname: string;
@@ -14,7 +14,7 @@ interface accountInterface {
   type: AccountType;
 }
 
-interface transactionInterface {
+interface TransactionInterface {
   transactionType: TransactionType;
   amount: number;
   accountId: number;
@@ -22,9 +22,9 @@ interface transactionInterface {
 }
 
 class Transactions {
-  protected static transactions: transactionInterface[] = [];
+  protected static transactions: TransactionInterface[] = [];
 
-  createTransaction(transaction: transactionInterface) {
+  createTransaction(transaction: TransactionInterface) {
     let currDate = new Date();
     Transactions.transactions.push({
       ...transaction,
@@ -59,7 +59,7 @@ class Transactions {
   }
 }
 
-abstract class Account extends Transactions {
+abstract class Account {
   public accountOwner: string;
   public Fname: string;
   public Lname: string;
@@ -67,7 +67,7 @@ abstract class Account extends Transactions {
   public balance: number;
   public type: AccountType;
 
-  protected static accountList: accountInterface[] = [];
+  protected static accountList: AccountInterface[] = [];
 
   constructor(
     id: number,
@@ -77,29 +77,24 @@ abstract class Account extends Transactions {
     balance: number,
     type: AccountType,
   ) {
-    super();
-
     this.accountOwner = accountOwner;
     this.Fname = Fname;
     this.Lname = Lname;
     this.id = id;
     this.balance = balance;
     this.type = type;
-
-    if (accountOwner !== "admin") {
-      this.createAccount({
-        accountOwner: accountOwner,
-        Fname: Fname,
-        Lname: Lname,
-        id: id,
-        balance: balance,
-        type: type,
-      });
-    }
   }
+}
 
-  private createAccount(account: accountInterface): void {
-    const checkAvailability = Account.accountList.find(
+class Bank {
+  protected static accountList: AccountInterface[] = [];
+
+  private transactions = new Transactions();
+
+  //create an account
+
+  createAccount(account: AccountInterface): void {
+    const checkAvailability = Bank.accountList.find(
       (item) => item.id == account.id,
     );
 
@@ -119,7 +114,7 @@ abstract class Account extends Transactions {
       return;
     }
 
-    Account.accountList.push({
+    Bank.accountList.push({
       accountOwner: account.accountOwner,
       Fname: account.Fname,
       Lname: account.Lname,
@@ -131,12 +126,7 @@ abstract class Account extends Transactions {
     console.log("== Account Created Successfully == \n");
   }
 
-  viewAccounts(): void {
-    let updatedAccounts = Account.accountList.forEach((item) => {});
-  }
-
-  abstract checkBalance(): void;
-
+  //Deposit amount
   deposit(id: number, type: AccountType, balance: number): void {
     if (!this.findAccount(id)) {
       console.log("Account Number Does Not Exist !!");
@@ -148,6 +138,8 @@ abstract class Account extends Transactions {
       console.log(
         "Please put in a balance more than or equal to $500. Thank you \n",
       );
+
+      return;
     }
 
     // if (type == "Savings") {
@@ -155,13 +147,13 @@ abstract class Account extends Transactions {
     // } else if (type == "Checking") {
     // }
 
-    Account.accountList.forEach((account) => {
+    Bank.accountList.forEach((account) => {
       if (account.id == id) {
         account.balance = account.balance + balance;
       }
     });
 
-    this.createTransaction({
+    this.transactions.createTransaction({
       transactionType: "Deposit",
       amount: balance,
       accountId: id,
@@ -170,13 +162,14 @@ abstract class Account extends Transactions {
     console.log("Deposit Successfull !!\n");
   }
 
+  //Withraw Amount from an account
   withrawAmount(id: number, type: string, balance: number): void {
     if (!this.findAccount(id)) {
       console.log("Account Number Does Not Exist !!");
       return;
     }
 
-    let ownerAccount: accountInterface | undefined = Account.accountList.find(
+    let ownerAccount: AccountInterface | undefined = Bank.accountList.find(
       (item) => {
         if (item.id == id) {
           return item;
@@ -192,13 +185,13 @@ abstract class Account extends Transactions {
       return;
     }
 
-    Account.accountList.forEach((account) => {
+    Bank.accountList.forEach((account) => {
       if (account.id == id) {
         account.balance = account.balance - balance;
       }
     });
 
-    this.createTransaction({
+    this.transactions.createTransaction({
       transactionType: "Withraw",
       amount: balance,
       accountId: id,
@@ -207,6 +200,7 @@ abstract class Account extends Transactions {
     console.log("Withraw Successful! \n");
   }
 
+  //Transfer Balance
   transferAmount(acc1: number, acc2: number, amount: number) {
     let checkAccount1 = this.findAccount(acc1);
     if (!checkAccount1) {
@@ -227,28 +221,27 @@ abstract class Account extends Transactions {
 
     // Reduce the balance from the first account
 
-    let withrawingAccount: accountInterface | undefined =
-      Account.accountList.find((acc) => acc.id == acc1);
+    let withrawingAccount: AccountInterface | undefined = Bank.accountList.find(
+      (acc) => acc.id == acc1,
+    );
 
     if (
       withrawingAccount?.balance != undefined &&
-      withrawingAccount.balance > amount
+      withrawingAccount.balance < amount
     ) {
-      withrawingAccount.balance = withrawingAccount.balance - amount;
-    } else {
       console.log("Insufficient Account Balance!");
       return;
     }
 
-    Account.accountList.forEach((acc) => {
+    Bank.accountList.forEach((acc) => {
       if (acc.id === acc1) {
-        acc = withrawingAccount;
+        acc.balance -= amount;
       } else if (acc.id === acc2) {
-        acc.balance = acc.balance + amount;
+        acc.balance += amount;
       }
     });
 
-    this.createTransaction({
+    this.transactions.createTransaction({
       transactionType: "Transfer",
       amount: amount,
       accountId: acc1,
@@ -257,6 +250,7 @@ abstract class Account extends Transactions {
     console.log("Transfer Successful!");
   }
 
+  //View Balance on Account
   viewBalance(id: number) {
     let isAccountExist = this.findAccount(id);
 
@@ -265,8 +259,9 @@ abstract class Account extends Transactions {
       return;
     }
 
-    const currentAccount: accountInterface | undefined =
-      Account.accountList.find((acc) => acc.id == id);
+    const currentAccount: AccountInterface | undefined = Bank.accountList.find(
+      (acc) => acc.id == id,
+    );
 
     if (currentAccount != undefined) {
       console.log("Owner:");
@@ -277,8 +272,9 @@ abstract class Account extends Transactions {
     }
   }
 
+  //Finding Account
   findAccount(id: number): boolean {
-    const checkAvailability = Account.accountList.find((item) => item.id == id);
+    const checkAvailability = Bank.accountList.find((item) => item.id == id);
 
     if (checkAvailability !== undefined) {
       return true;
@@ -328,8 +324,10 @@ do {
     console.log("2. Checking account");
     let accountType = parseInt(prompt(""));
 
+    const bank = new Bank();
+
     if (accountType == 1) {
-      new SavingsAccount(
+      const savingsAcount = new SavingsAccount(
         accountNum,
         accountOwner,
         firstName,
@@ -337,8 +335,10 @@ do {
         initialBalance,
         "Savings",
       );
+
+      bank.createAccount(savingsAcount);
     } else if (accountType == 2) {
-      new CheckingAccount(
+      const checkingAcount = new CheckingAccount(
         accountNum,
         accountOwner,
         firstName,
@@ -346,6 +346,8 @@ do {
         initialBalance,
         "Checking",
       );
+
+      bank.createAccount(checkingAcount);
     }
   } else if (parseInt(choice) == 2) {
     let accountNumber = parseInt(prompt("Please enter Account Number: "));
@@ -361,28 +363,12 @@ do {
       accountType = parseInt(prompt(""));
     }
 
+    let bank = new Bank();
+
     if (accountType == 1) {
-      const adminAccount = new SavingsAccount(
-        accountNumber,
-        "admin",
-        "admin",
-        "doe",
-        depositAmount,
-        "Savings",
-      );
-
-      adminAccount.deposit(accountNumber, "Savings", depositAmount);
+      bank.deposit(accountNumber, "Savings", depositAmount);
     } else if (accountType == 2) {
-      const adminAccount = new CheckingAccount(
-        accountNumber,
-        "admin",
-        "admin",
-        "doe",
-        depositAmount,
-        "Checking",
-      );
-
-      adminAccount.deposit(accountNumber, "Checking", depositAmount);
+      bank.deposit(accountNumber, "Checking", depositAmount);
     }
   } else if (parseInt(choice) == 3) {
     let accountNumber = parseInt(prompt("Please enter Account Number: "));
@@ -398,28 +384,12 @@ do {
       accountType = parseInt(prompt(""));
     }
 
+    let bank = new Bank();
+
     if (accountType == 1) {
-      const adminAccount = new SavingsAccount(
-        accountNumber,
-        "admin",
-        "admin",
-        "doe",
-        depositAmount,
-        "Savings",
-      );
-
-      adminAccount.withrawAmount(accountNumber, "Savings", depositAmount);
+      bank.withrawAmount(accountNumber, "Savings", depositAmount);
     } else if (accountType == 2) {
-      const adminAccount = new CheckingAccount(
-        accountNumber,
-        "admin",
-        "admin",
-        "doe",
-        depositAmount,
-        "Checking",
-      );
-
-      adminAccount.withrawAmount(accountNumber, "Savings", depositAmount);
+      bank.withrawAmount(accountNumber, "Savings", depositAmount);
     }
   } else if (parseInt(choice) == 4) {
     console.log("Transfer to another account\n");
@@ -427,26 +397,19 @@ do {
     let transferTo = parseInt(prompt("To Account: "));
     let amount = parseInt(prompt("Amount: "));
 
-    const adminAccount = new SavingsAccount(
-      1,
-      "admin",
-      "admin",
-      "doe",
-      0,
-      "Savings",
-    );
+    let bank = new Bank();
 
-    adminAccount.transferAmount(transferFrom, transferTo, amount);
+    bank.transferAmount(transferFrom, transferTo, amount);
   } else if (parseInt(choice) == 5) {
     let accountNumber = parseInt(prompt("Account Number: "));
 
-    let admin = new SavingsAccount(0, "admin", "admin", "admin", 0, "Savings");
+    let bank = new Bank();
 
-    admin.viewBalance(accountNumber);
+    bank.viewBalance(accountNumber);
   } else if (parseInt(choice) == 6) {
-    let admin = new SavingsAccount(0, "admin", "admin", "admin", 0, "Savings");
+    let transaction = new Transactions();
 
-    admin.viewTransactions();
+    transaction.viewTransactions();
   } else if (parseInt(choice) == 7) {
     console.log("Thank you for using my Bank!");
   }
